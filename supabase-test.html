@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supabase Connectivity Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; line-height: 1.5; }
+    .ok { color: #0a7a2f; }
+    .fail { color: #b00020; }
+    pre { background:#111; color:#0f0; padding:12px; border-radius:8px; white-space:pre-wrap; }
+    input { width:100%; max-width:720px; margin:6px 0 12px; padding:8px; }
+    button { padding:10px 14px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <h1>Supabase Test (GitHub Pages)</h1>
+  <p>Isi URL + ANON KEY dulu, lalu klik <b>Run Test</b>.</p>
+
+  <label>Supabase URL</label><br/>
+  <input id="url" placeholder="https://xxxx.supabase.co" /><br/>
+
+  <label>Supabase ANON KEY</label><br/>
+  <input id="key" placeholder="eyJ..." /><br/>
+
+  <button id="run">Run Test</button>
+
+  <h3>Log</h3>
+  <pre id="log">Menunggu test dijalankan...</pre>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
+
+    const logEl = document.getElementById('log')
+    const runBtn = document.getElementById('run')
+    const urlEl = document.getElementById('url')
+    const keyEl = document.getElementById('key')
+
+    const logs = []
+    const log = (msg, cls='') => {
+      logs.push(msg)
+      logEl.textContent = logs.join('\n')
+      if (cls) console.log(`[${cls}] ${msg}`)
+      else console.log(msg)
+    }
+
+    runBtn.addEventListener('click', async () => {
+      logs.length = 0
+      log('Mulai test...')
+
+      const SUPABASE_URL = urlEl.value.trim()
+      const SUPABASE_ANON_KEY = keyEl.value.trim()
+
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        log('❌ URL / ANON KEY belum diisi')
+        return
+      }
+
+      try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        // TEST 1: READ
+        log('TEST 1: SELECT destinations limit 1')
+        const readRes = await supabase.from('destinations').select('id,name').limit(1)
+        if (readRes.error) {
+          log(`❌ READ FAIL: ${readRes.error.message}`)
+        } else {
+          log(`✅ READ PASS: rows=${readRes.data.length}`)
+        }
+
+        // TEST 2: INSERT
+        log('TEST 2: INSERT contact_messages')
+        const payload = {
+          name: 'GitHub Pages Test',
+          email: 'test@example.com',
+          message: 'Supabase test from GitHub Pages',
+          subject: 'Connectivity test'
+        }
+        const insRes = await supabase.from('contact_messages').insert([payload]).select()
+        if (insRes.error) {
+          log(`❌ INSERT FAIL: ${insRes.error.message}`)
+        } else {
+          log(`✅ INSERT PASS: inserted=${insRes.data.length}`)
+        }
+
+        // TEST 3: READ latest message
+        log('TEST 3: SELECT latest contact_messages')
+        const msgRes = await supabase
+          .from('contact_messages')
+          .select('id,name,email,created_at')
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (msgRes.error) {
+          log(`❌ READ2 FAIL: ${msgRes.error.message}`)
+        } else {
+          log(`✅ READ2 PASS: latest=${msgRes.data?.[0]?.email ?? '-'}`)
+        }
+
+        log('--- SELESAI ---')
+      } catch (e) {
+        log(`❌ UNCAUGHT ERROR: ${e.message}`)
+      }
+    })
+  </script>
+</body>
+</html>
