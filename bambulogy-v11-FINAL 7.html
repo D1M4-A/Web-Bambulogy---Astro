@@ -795,7 +795,7 @@ h2{ font-size: clamp(1.7rem, 3.2vw, 2.4rem); }
         <label>Alamat Email<input type="email" name="email" placeholder="nama@email.com" required></label>
         <label>Nomor WhatsApp<input type="tel" name="whatsapp" placeholder="08xx xxxx xxxx" required></label>
         <label>Destinasi yang Diminati
-          <select name="property">
+          <select name="property" required>
             <option value="">Pilih Destinasi</option>
             <option value="Cabinite Pangalengan">Cabinite Pangalengan</option>
             <option value="Adem Anyer Park">Adem Anyer Park</option>
@@ -804,7 +804,7 @@ h2{ font-size: clamp(1.7rem, 3.2vw, 2.4rem); }
             <option value="Belum Yakin">Belum yakin, mau konsultasi dulu</option>
           </select>
         </label>
-        <label>Perkiraan Jumlah Peserta<input type="number" name="peserta" placeholder="Contoh: 20" min="1"></label>
+        <label>Perkiraan Jumlah Peserta<input type="number" name="peserta" placeholder="Contoh: 20" min="1" required></label>
         <button type="submit" class="btn btn--primary booking-submit">Kirim Permintaan Proposal</button>
       </form>
     </div>
@@ -1012,8 +1012,27 @@ const bookingFormWrap = document.getElementById('bookingFormWrap');
 const bookingSuccess = document.getElementById('bookingSuccess');
 if (bookingForm) bookingForm.addEventListener('submit', (e)=>{
   e.preventDefault();
+
+  if (!bookingForm.checkValidity()) {
+    bookingForm.reportValidity();
+    return;
+  }
+
+  const formData = new FormData(bookingForm);
+  const subject = `Permintaan Proposal - ${formData.get('nama')}`;
+  const body = [
+    `Nama Lengkap: ${formData.get('nama') || '-'}`,
+    `Nama Perusahaan: ${formData.get('perusahaan') || '-'}`,
+    `Alamat Email: ${formData.get('email') || '-'}`,
+    `Nomor WhatsApp: ${formData.get('whatsapp') || '-'}`,
+    `Destinasi yang Diminati: ${formData.get('property') || '-'}`,
+    `Perkiraan Jumlah Peserta: ${formData.get('peserta') || '-'}`
+  ].join('\n');
+
   bookingFormWrap.style.display = 'none';
   bookingSuccess.classList.add('is-visible');
+
+  window.location.href = `mailto:booking@bambulogyindonesia.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 });
 
 </script>
